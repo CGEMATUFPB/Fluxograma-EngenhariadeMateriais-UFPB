@@ -119,22 +119,4 @@ Os horários oficiais vêm de `js/horarios-oficiais.js`, gerado a partir do rela
 Turmas Ofertadas ao Curso" (planilha `Horario - 2025-1.xlsx`, aba Plan1), que lista turma, horário no
 formato SIGAA (ex.: `35M23` = terça e quinta, manhã, dos horários 2 e 3) e professor de cada disciplina
 efetivamente ofertada no período letivo 2026.1. Esse arquivo é só o "valor padrão" — depois que o aluno
-edita algo na tela, a versão salva no navegador manda. Quando a coordenação divulgar a oferta de um novo
-período, é só gerar um `horarios-oficiais.js` novo (ou editar os valores manualmente) para atualizar os
-padrões.
-
-As aulas diurnas (manhã e tarde) duram 1h cada, corridas, sem intervalo (07:00–13:00 e 13:00–19:00). As
-aulas noturnas duram 50min, com intervalo entre a 2ª e a 3ª (19:00–22:30). Essa tabela de horários fica
-em `FAIXAS`, no topo de `js/horarios.js`, e é usada tanto pra desenhar as linhas da Matriz quanto pra
-converter os códigos SIGAA em horário de relógio ao gerar `horarios-oficiais.js`.
-
-As opções concretas de **Optativa A/B/C** (16 disciplinas ao todo, divididas em 3 grupos conforme a
-lista da coordenação) também ficam em `js/horarios-oficiais.js`, nas estruturas `GRUPOS_OPTATIVAS`
-(disciplinas de cada grupo) e `CODIGO_PARA_GRUPO_OPTATIVA` (liga o slot do fluxograma ao grupo certo).
-
-## Próximos passos possíveis
-
-- Adicionar autenticação para salvar o progresso na nuvem (hoje é só local, por navegador).
-- Alertar visualmente quando a Matriz detectar um conflito real de horário.
-- Exportar o progresso/horário em PDF ou imagem.
-- Script para regenerar `horarios-oficiais.js` automaticamente a cada nova planilha de horários.
+edita algo na tela, a versão salva no navegador manda. Quando a coordenação divulgar a ofe
