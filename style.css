@@ -193,6 +193,36 @@ main { padding: 20px 24px 60px; max-width: 1500px; margin: 0 auto; }
 .amostra.depto-outros { background: var(--verde-claro); border-color: var(--verde); }
 .legenda-dica { font-style: italic; }
 
+/* ---------- Conteúdos Complementares Flexíveis ---------- */
+.secao-flexiveis {
+  margin-top: 18px;
+  background: var(--branco);
+  border: 1px solid var(--cinza-200);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.secao-flexiveis h3 { margin: 0 0 6px; font-size: 1rem; color: var(--azul-escuro); }
+.lista-flexiveis {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.item-flexivel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--cinza-100);
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.item-flexivel input { cursor: pointer; }
+.item-flexivel-nome { flex: 1; font-size: 0.85rem; }
+.item-flexivel-creditos { font-size: 0.72rem; color: var(--cinza-600); font-weight: 600; }
+.item-flexivel.concluida { background: #d9f2e3; }
+.item-flexivel.concluida .item-flexivel-nome { text-decoration: line-through; color: var(--cinza-600); }
+
 /* ---------- Tabela do fluxograma ---------- */
 .tabela-scroll { overflow-x: auto; border: 1px solid var(--cinza-200); border-radius: var(--radius); background: var(--branco); }
 
@@ -934,6 +964,9 @@ main { padding: 20px 24px 60px; max-width: 1500px; margin: 0 auto; }
 .check-cursando input { cursor: pointer; width: 12px; height: 12px; }
 .rotulo-cursando { white-space: nowrap; }
 
+.check-cursando.desabilitado { cursor: not-allowed; opacity: 0.45; }
+.check-cursando.desabilitado input { cursor: not-allowed; }
+
 .amostra.cursando { background: #dbe8fb; border-color: var(--azul); }
 
 .card-disciplina.cursando:not(.concluida) {
@@ -1006,6 +1039,17 @@ main { padding: 20px 24px 60px; max-width: 1500px; margin: 0 auto; }
   font-size: 0.72rem;
   color: #9c5b12;
   font-weight: 600;
+}
+
+.seletor-turma-cursando {
+  margin-left: 6px;
+  border: 1px solid var(--azul);
+  border-radius: 5px;
+  padding: 1px 4px;
+  font-size: 0.75rem;
+  color: var(--azul-escuro);
+  background: var(--azul-claro);
+  cursor: pointer;
 }
 
 .aviso-sem-horario {

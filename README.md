@@ -43,7 +43,15 @@ A senha padrão é `demat2026`. Pra trocar:
   - Clique na caixinha de cada disciplina para marcar como concluída (fica salvo no navegador).
   - Clique no cartão da disciplina para destacar em azul os pré-requisitos dela e em laranja quem depende dela.
   - Barra de progresso mostra % de créditos concluídos, créditos e disciplinas (ex.: "42% concluído —
-    120/334 créditos — 30/83 disciplinas").
+    120/282 créditos — 30/71 disciplinas"). Os totais batem com a estrutura curricular oficial do curso
+    (282 créditos, 4230h): créditos obrigatórios + estágio + as 8 UCEs + as 3 optativas do fluxograma
+    (G7/G8/H9) + os 4 Conteúdos Complementares Flexíveis — sem contar as 16 optativas concretas do
+    catálogo inteiro, que são só o "menu" de opções pra preencher os 3 slots de optativa (não créditos
+    extras).
+  - Seção **"Conteúdos Complementares Flexíveis"**, logo abaixo do fluxograma: 4 itens (Tópicos
+    Especiais em Engenharia de Materiais I a IV, 12 créditos no total) que a estrutura curricular exige
+    mas não têm período fixo no fluxograma oficial. Marque como concluído igual às disciplinas normais —
+    conta na barra de progresso.
   - Botão **"🧭 O que posso cursar agora?"** mostra o "caminho" a partir do seu progresso: destaca com
     borda dourada e um selo "pode cursar" toda disciplina cujos pré-requisitos você já concluiu (e que
     ainda não cursou), e esmaece o resto do fluxograma — as que ainda dependem de outra disciplina.
@@ -57,16 +65,23 @@ A senha padrão é `demat2026`. Pra trocar:
     progresso (%, créditos, disciplinas), legenda de cores e a grade completa com o status de cada
     disciplina.
   - Uma segunda caixinha, "cursando", marca as disciplinas que você está fazendo neste período —
-    independente de "concluída". Marcar uma ou mais disciplinas libera o botão **"📅 Ver meu horário
+    independente de "concluída". Assim que a disciplina é marcada como **concluída**, a caixinha
+    "cursando" fica bloqueada (cinza, não clicável) e é desmarcada automaticamente, já que não faz
+    sentido uma disciplina já validada continuar contando como "em andamento" no seu horário do
+    período; desmarcando "concluída" ela volta a ficar disponível pra marcar como cursando de novo.
+    Marcar uma ou mais disciplinas libera o botão **"📅 Ver meu horário
     deste período"**, que abre um painel com a grade semanal só dessas disciplinas (usa o horário que
     você já tiver editado na aba Horários, ou o oficial se não tiver mexido em nada). Quando duas
     disciplinas cursando caem no mesmo dia/horário, a célula fica laranja com as duas destacadas (choque
-    real); se forem só turmas diferentes da mesma disciplina, aparecem separadas sem alarde. Se uma
-    disciplina cursando não tiver horário oficial cadastrado (comum em disciplinas de outros
-    departamentos, fora da oferta do DEMAT — ex.: Física Experimental II), ela some da grade e o painel
-    mostra um aviso explicando isso, com a orientação de preencher o horário manualmente na aba
-    Horários. De lá dá pra clicar em **"⬇ Baixar PDF do horário"** e salvar essa grade como arquivo
-    separado.
+    real); se forem só turmas diferentes da mesma disciplina, aparecem separadas sem alarde. Se a
+    disciplina tem mais de uma turma cadastrada (ex.: uma pra quem está no fluxo normal e outra pra quem
+    ficou em dependência), aparece um seletor ao lado do nome dela na lista pra você escolher qual turma
+    é a sua — só o horário da turma escolhida entra na grade e no PDF (por padrão vem selecionada a
+    primeira turma cadastrada, até você trocar). Se uma disciplina cursando não tiver horário oficial
+    cadastrado (comum em disciplinas de outros departamentos, fora da oferta do DEMAT — ex.: Física
+    Experimental II), ela some da grade e o painel mostra um aviso explicando isso, com a orientação de
+    preencher o horário manualmente na aba Horários. De lá dá pra clicar em **"⬇ Baixar PDF do
+    horário"** e salvar essa grade como arquivo separado.
 - **Aba Horários**, com duas formas de visualizar:
   - **Lista**: escolha um período e veja as disciplinas agrupadas por departamento responsável
     (Engenharia de Materiais, Matemática, Física, Química, Estatística, etc.), já pré-preenchidas com
@@ -170,7 +185,11 @@ resto das telas.
 
 As disciplinas, créditos e pré-requisitos foram extraídos do fluxograma oficial em PDF. Os totais de
 créditos por período nas colunas do fluxograma batem exatamente com os totais impressos no documento
-original. Cada disciplina também tem um `departamento` (nome oficial, conforme SIGAA) usado para
+original. O total geral do curso (barra de progresso) vem de `RESUMO_CURSO.total.creditos` em
+`js/data.js` (282 créditos / 4230h, conforme a estrutura curricular oficial) — se a coordenação atualizar
+esses números algum dia, é só editar esse objeto. Os "Conteúdos Complementares Flexíveis" (Tópicos
+Especiais I a IV) ficam em `CONTEUDOS_FLEXIVEIS`, separados de `DISCIPLINAS` porque não têm período fixo
+no fluxograma. Cada disciplina também tem um `departamento` (nome oficial, conforme SIGAA) usado para
 agrupar a Lista e colorir a Matriz — para disciplinas não ofertadas no período letivo mais recente, o
 departamento foi inferido pela área da disciplina. Se notar algo desatualizado (grades mudam de tempos
 em tempos), é só editar o arquivo `js/data.js` — a estrutura de cada disciplina é:

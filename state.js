@@ -16,6 +16,7 @@ const CHAVE_ESCOLHAS_OPTATIVAS = "fluxograma:escolhas-optativas";
 const CHAVE_PROPOSTA_DEMAT = "fluxograma:proposta-demat";
 const CHAVE_OPTATIVAS_CONFIG_DEMAT = "fluxograma:optativas-config-demat";
 const CHAVE_DOCENTE_DESBLOQUEADO = "fluxograma:docente-desbloqueado";
+const CHAVE_TURMA_PREFERIDA = "fluxograma:turma-preferida-cursando";
 
 const Estado = {
   // ---------- Progresso (disciplinas concluídas) ----------
@@ -104,6 +105,28 @@ const Estado = {
     localStorage.removeItem(CHAVE_PROPOSTA_DEMAT);
     localStorage.removeItem(CHAVE_OPTATIVAS_CONFIG_DEMAT);
     localStorage.removeItem(CHAVE_DOCENTE_DESBLOQUEADO);
+    localStorage.removeItem(CHAVE_TURMA_PREFERIDA);
+  },
+
+  // ---------- Turma preferida por disciplina (quando há 2+ turmas cadastradas) ----------
+  // Usado no painel "Meu horário deste período" (Fluxograma): se a disciplina cursando tem
+  // mais de uma turma, o aluno escolhe qual delas representa o horário dele — sem isso a grade
+  // mostraria as duas turmas como se o aluno cursasse ambas ao mesmo tempo.
+  // formato: { [codigoDisciplina]: turmaEscolhida }
+  carregarTurmasPreferidas() {
+    try {
+      const raw = localStorage.getItem(CHAVE_TURMA_PREFERIDA);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      console.warn("Falha ao carregar turmas preferidas:", e);
+      return {};
+    }
+  },
+
+  salvarTurmaPreferida(codigo, turma) {
+    const salvas = this.carregarTurmasPreferidas();
+    salvas[codigo] = turma;
+    localStorage.setItem(CHAVE_TURMA_PREFERIDA, JSON.stringify(salvas));
   },
 
   // ---------- Acesso de docente (senha única, desbloqueia todas as abas neste navegador) ----------
@@ -197,7 +220,12 @@ const Estado = {
 // ---------- Helpers de domínio sobre DISCIPLINAS (data.js) ----------
 
 function buscarDisciplina(codigo) {
-  return DISCIPLINAS.find((d) => d.codigo === codigo) || OPTATIVAS.find((d) => d.codigo === codigo);
+  const flexiveis = typeof CONTEUDOS_FLEXIVEIS !== "undefined" ? CONTEUDOS_FLEXIVEIS : [];
+  return (
+    DISCIPLINAS.find((d) => d.codigo === codigo) ||
+    OPTATIVAS.find((d) => d.codigo === codigo) ||
+    flexiveis.find((d) => d.codigo === codigo)
+  );
 }
 
 function listarPorPeriodo(periodo) {
@@ -216,15 +244,25 @@ function prereqsAtendidos(disciplina, concluidas) {
   return disciplina.prereq.every((cod) => concluidas.has(cod));
 }
 
+// Itens que o aluno de fato marca como concluído no fluxograma: as disciplinas do grid
+// (DISCIPLINAS, que já inclui os 3 slots de Optativa A/B/C) mais os Conteúdos Complementares
+// Flexíveis. As 16 optativas concretas (OPTATIVAS) NÃO entram aqui — são só o "menu" de opções
+// pra escolher o que preencher em cada slot de optativa, não créditos adicionais: contá-las à
+// parte inflava o total (334cr em vez dos 282cr da estrutura curricular oficial).
+function itensRastreaveisDoProgresso() {
+  const flexiveis = typeof CONTEUDOS_FLEXIVEIS !== "undefined" ? CONTEUDOS_FLEXIVEIS : [];
+  return [...DISCIPLINAS, ...flexiveis];
+}
+
 function calcularProgresso(concluidas) {
-  const todas = [...DISCIPLINAS, ...OPTATIVAS];
-  const totalCreditos = todas.reduce((s, d) => s + d.creditos, 0);
-  const creditosConcluidos = todas
-    .filter((d) => concluidas.has(d.codigo))
-    .reduce((s, d) => s + d.creditos, 0);
+  const itens = itensRastreaveisDoProgresso();
+  const totalCreditos =
+    typeof RESUMO_CURSO !== "undefined" ? RESUMO_CURSO.total.creditos : itens.reduce((s, d) => s + d.creditos, 0);
+  const concluidosNosItens = itens.filter((d) => concluidas.has(d.codigo));
+  const creditosConcluidos = concluidosNosItens.reduce((s, d) => s + d.creditos, 0);
   return {
-    disciplinasConcluidas: concluidas.size,
-    totalDisciplinas: todas.length,
+    disciplinasConcluidas: concluidosNosItens.length,
+    totalDisciplinas: itens.length,
     creditosConcluidos,
     totalCreditos,
     percentual: totalCreditos > 0 ? Math.round((creditosConcluidos / totalCreditos) * 100) : 0,

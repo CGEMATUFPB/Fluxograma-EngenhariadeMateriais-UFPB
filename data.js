@@ -140,6 +140,16 @@ const OPTATIVAS = [
   { codigo: "OPT16", nome: "Técnicas Espectroscópicas para Polímeros", creditos: 4, departamento: "CT - DEPARTAMENTO DE ENGENHARIA DE MATERIAIS", prereq: ["F4"] },
 ];
 
+// Conteúdos Complementares Flexíveis (item 2.3 da estrutura curricular): 12 créditos / 180h,
+// sem período fixo no fluxograma — o aluno pode cursar quando quiser, geralmente nos últimos
+// períodos. Créditos batem exatamente com o exigido pela estrutura curricular oficial do curso.
+const CONTEUDOS_FLEXIVEIS = [
+  { codigo: "FLEX1", nome: "Tópicos Especiais em Engenharia de Materiais I", creditos: 2, ch: 30, departamento: "CT - DEPARTAMENTO DE ENGENHARIA DE MATERIAIS" },
+  { codigo: "FLEX2", nome: "Tópicos Especiais em Engenharia de Materiais II", creditos: 2, ch: 30, departamento: "CT - DEPARTAMENTO DE ENGENHARIA DE MATERIAIS" },
+  { codigo: "FLEX3", nome: "Tópicos Especiais em Engenharia de Materiais III", creditos: 4, ch: 60, departamento: "CT - DEPARTAMENTO DE ENGENHARIA DE MATERIAIS" },
+  { codigo: "FLEX4", nome: "Tópicos Especiais em Engenharia de Materiais IV", creditos: 4, ch: 60, departamento: "CT - DEPARTAMENTO DE ENGENHARIA DE MATERIAIS" },
+];
+
 const RESUMO_CURSO = {
   conteudosObrigatorios: { ch: 2475, creditos: 165 },
   estagioSupervisionado: { ch: 285, creditos: 19 },

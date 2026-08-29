@@ -68,11 +68,18 @@ const Fluxograma = (() => {
 
   function onToggleConcluida(codigo) {
     concluidas = Estado.alternarConcluida(codigo);
+    // Concluída e cursando são estados excludentes: se acabou de marcar como concluída e ela
+    // ainda estava marcada como "cursando este período", tira do cursando (senão fica contando
+    // no horário/PDF do período uma disciplina que já foi validada).
+    if (concluidas.has(codigo) && cursando.has(codigo)) {
+      cursando = Estado.alternarCursando(codigo);
+    }
     render();
     document.dispatchEvent(new CustomEvent("progresso:atualizado"));
   }
 
   function onToggleCursando(codigo) {
+    if (concluidas.has(codigo)) return; // bloqueado: disciplina já concluída não pode ser "cursando"
     cursando = Estado.alternarCursando(codigo);
     render();
   }
@@ -135,8 +142,14 @@ const Fluxograma = (() => {
           <label class="check-concluida" title="Marcar como concluída">
             <input type="checkbox" ${concluidas.has(disciplina.codigo) ? "checked" : ""} data-codigo="${disciplina.codigo}" />
           </label>
-          <label class="check-cursando" title="Marcar como cursando este período">
-            <input type="checkbox" ${cursando.has(disciplina.codigo) ? "checked" : ""} data-codigo="${disciplina.codigo}" />
+          <label class="check-cursando${concluidas.has(disciplina.codigo) ? " desabilitado" : ""}" title="${
+      concluidas.has(disciplina.codigo)
+        ? "Disciplina já concluída — não dá pra marcar como cursando"
+        : "Marcar como cursando este período"
+    }">
+            <input type="checkbox" ${cursando.has(disciplina.codigo) ? "checked" : ""} ${
+      concluidas.has(disciplina.codigo) ? "disabled" : ""
+    } data-codigo="${disciplina.codigo}" />
             <span class="rotulo-cursando">cursando</span>
           </label>
           <span class="card-creditos">${disciplina.creditos}cr</span>
@@ -147,6 +160,33 @@ const Fluxograma = (() => {
           ${reqTexto ? `<span class="card-prereq">${reqTexto}</span>` : ""}
         </div>
       </div>`;
+  }
+
+  // ---------- Conteúdos Complementares Flexíveis (12 créditos, sem período fixo) ----------
+
+  function htmlItemFlexivel(d) {
+    const marcado = concluidas.has(d.codigo);
+    return (
+      `<label class="item-flexivel${marcado ? " concluida" : ""}">` +
+        `<input type="checkbox" ${marcado ? "checked" : ""} data-codigo="${d.codigo}" class="check-flexivel" />` +
+        `<span class="item-flexivel-nome">${d.nome}</span>` +
+        `<span class="item-flexivel-creditos">${d.creditos}cr</span>` +
+      `</label>`
+    );
+  }
+
+  function htmlSecaoFlexiveis() {
+    if (typeof CONTEUDOS_FLEXIVEIS === "undefined" || !CONTEUDOS_FLEXIVEIS.length) return "";
+    return (
+      '<div class="secao-flexiveis">' +
+        "<h3>Conteúdos Complementares Flexíveis</h3>" +
+        '<p class="dica-horarios">12 créditos (180h) da estrutura curricular são "flexíveis" — não têm período ' +
+        "fixo no fluxograma oficial. Marque abaixo conforme for cursando/validando cada um.</p>" +
+        '<div class="lista-flexiveis">' +
+        CONTEUDOS_FLEXIVEIS.map(htmlItemFlexivel).join("") +
+        "</div>" +
+      "</div>"
+    );
   }
 
   // ---------- Painel "Meu horário deste período" + exportação em PDF ----------
@@ -176,6 +216,41 @@ const Fluxograma = (() => {
       .sort((a, b) => a.codigo.localeCompare(b.codigo));
   }
 
+  // ---------- Turma preferida (quando a disciplina cursando tem 2+ turmas cadastradas) ----------
+
+  // Agrupa as entradas de uma disciplina pela turma. Retorna um Map preservando a ordem de
+  // primeira aparição (útil pra escolher "a primeira turma" como padrão de forma previsível).
+  function turmasDaDisciplina(codigo) {
+    const grupos = new Map();
+    entradasParaCodigo(codigo).forEach((e) => {
+      const chave = (e.turma || "").trim() || "_sem_turma_";
+      if (!grupos.has(chave)) grupos.set(chave, []);
+      grupos.get(chave).push(e);
+    });
+    return grupos;
+  }
+
+  function turmaEscolhidaPara(codigo, grupos) {
+    const salvas = Estado.carregarTurmasPreferidas();
+    if (salvas[codigo] && grupos.has(salvas[codigo])) return salvas[codigo];
+    return [...grupos.keys()][0]; // padrão: primeira turma encontrada
+  }
+
+  // Entradas de horário que de fato entram na grade "Meu horário": se a disciplina tem só uma
+  // turma, usa todas; se tem 2+, usa só a turma escolhida (ou a primeira, por padrão) — sem isso
+  // a grade mostraria as turmas todas como se o aluno cursasse ao mesmo tempo.
+  function entradasEscolhidasParaCodigo(codigo) {
+    const grupos = turmasDaDisciplina(codigo);
+    if (grupos.size <= 1) return entradasParaCodigo(codigo);
+    const escolhida = turmaEscolhidaPara(codigo, grupos);
+    return grupos.get(escolhida) || [];
+  }
+
+  function onEscolherTurmaCursando(codigo, turma) {
+    Estado.salvarTurmaPreferida(codigo, turma);
+    render();
+  }
+
   function htmlPainelMeuHorario() {
     const disciplinas = disciplinasCursando();
     if (!disciplinas.length) {
@@ -194,7 +269,7 @@ const Fluxograma = (() => {
 
     const ofertas = [];
     disciplinas.forEach((d) => {
-      entradasParaCodigo(d.codigo).forEach((e) => {
+      entradasEscolhidasParaCodigo(d.codigo).forEach((e) => {
         if (!e.dia || !e.inicio || !e.fim) return;
         ofertas.push({
           codigo: d.codigo,
@@ -278,7 +353,22 @@ const Fluxograma = (() => {
         const avisoInline = entradasParaCodigo(d.codigo).length === 0
           ? ' <span class="aviso-sem-horario-inline">⚠ sem horário cadastrado</span>'
           : "";
-        return "<li>" + d.codigo + " — " + d.nome + " (" + d.creditos + "cr)" + avisoInline + "</li>";
+        const grupos = turmasDaDisciplina(d.codigo);
+        let seletorTurma = "";
+        if (grupos.size > 1) {
+          const escolhida = turmaEscolhidaPara(d.codigo, grupos);
+          const opcoes = [...grupos.keys()]
+            .map((t) => {
+              const rotulo = t === "_sem_turma_" ? "sem turma" : "Turma " + t;
+              return '<option value="' + t + '" ' + (t === escolhida ? "selected" : "") + ">" + rotulo + "</option>";
+            })
+            .join("");
+          seletorTurma =
+            ' <select class="seletor-turma-cursando" data-codigo="' + d.codigo + '" title="Qual turma dessa disciplina é a sua">' +
+            opcoes +
+            "</select>";
+        }
+        return "<li>" + d.codigo + " — " + d.nome + " (" + d.creditos + "cr)" + seletorTurma + avisoInline + "</li>";
       })
       .join("");
     const cabecalhoDias = DIAS.map((d) => "<th>" + d + "</th>").join("");
@@ -293,9 +383,17 @@ const Fluxograma = (() => {
         "(escolha o período dela e preencha dia/horário) pra ela aparecer aqui.</p>"
       : "";
 
+    const temSeletorTurma = disciplinas.some((d) => turmasDaDisciplina(d.codigo).size > 1);
+    const dicaTurmaHtml = temSeletorTurma
+      ? '<p class="dica-horarios">Disciplinas com mais de uma turma cadastrada mostram um seletor ao lado do ' +
+        "nome — escolha qual turma é a sua pra grade abaixo (e o PDF) refletirem só o horário que você vai " +
+        "cursar de fato, sem misturar turmas diferentes.</p>"
+      : "";
+
     return (
       '<div class="painel-meu-horario" id="painel-meu-horario-conteudo">' +
         "<h3>Meu horário deste período</h3>" +
+        dicaTurmaHtml +
         '<ul class="lista-disciplinas-cursando">' + listaTexto + "</ul>" +
         avisoSemHorarioHtml +
         '<div class="tabela-scroll">' +
@@ -446,6 +544,8 @@ const Fluxograma = (() => {
             <tbody>${corpo}${rodapeTotais}</tbody>
           </table>
         </div>
+
+        ${htmlSecaoFlexiveis()}
       </div>
     `;
 
@@ -455,8 +555,14 @@ const Fluxograma = (() => {
     elementoRaiz.querySelectorAll(".check-concluida input").forEach((chk) => {
       chk.addEventListener("change", () => onToggleConcluida(chk.dataset.codigo));
     });
+    elementoRaiz.querySelectorAll(".check-flexivel").forEach((chk) => {
+      chk.addEventListener("change", () => onToggleConcluida(chk.dataset.codigo));
+    });
     elementoRaiz.querySelectorAll(".check-cursando input").forEach((chk) => {
       chk.addEventListener("change", () => onToggleCursando(chk.dataset.codigo));
+    });
+    elementoRaiz.querySelectorAll(".seletor-turma-cursando").forEach((sel) => {
+      sel.addEventListener("change", () => onEscolherTurmaCursando(sel.dataset.codigo, sel.value));
     });
     elementoRaiz.querySelectorAll(".btn-marcar-periodo").forEach((btn) => {
       btn.addEventListener("click", (ev) => {
